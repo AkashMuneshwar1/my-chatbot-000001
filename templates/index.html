@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="floating-chat-btn" class="floating-chat-btn">💬</div>
+    <div id="chat-window" class="chat-container" style="display: none;">
+        <div id="chatbox" class="chatbox"></div>
+        <div id="question-buttons" class="question-container"></div>
+    </div>
+
+    <script>
+        let currentQuestion = null;
+        const initialQuestions = ["Hello", "Hi","I need help"];
+        const chatbox = document.getElementById('chatbox');
+        const questionButtonsContainer = document.getElementById('question-buttons');
+        const chatWindow = document.getElementById('chat-window');
+        const floatingChatBtn = document.getElementById('floating-chat-btn');
+
+        floatingChatBtn.onclick = () => {
+            chatWindow.style.display = chatWindow.style.display === 'block' ? 'none' : 'block';
+            renderQuestions(initialQuestions);
+        };
+
+        function renderQuestions(questions) {
+            questionButtonsContainer.innerHTML = questions
+                .map(q => `<button class="question-button" onclick="sendMessage('${q}')">${q}</button>`)
+                .join('');
+        }
+
+        async function sendMessage(question) {
+            chatbox.innerHTML += `<div class="chat-bubble user-bubble">${question}</div>`;
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_question: question }),
+                });
+                const { response, next_questions } = await res.json();
+                chatbox.innerHTML += `<div class="chat-bubble bot-bubble">${response}</div>`;
+                renderQuestions(next_questions);
+            } catch {
+                chatbox.innerHTML += `<div class="chat-bubble bot-bubble error">Error connecting to the server.</div>`;
+            }
+        }
+
+        renderQuestions(initialQuestions);
+    </script>
+</body>
+</html>
